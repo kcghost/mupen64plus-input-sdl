@@ -22,7 +22,7 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define CONFIG_VERSION 2.00
+#define CONFIG_VERSION 2.01
 
 extern void load_configuration(int bPreConfig);
 

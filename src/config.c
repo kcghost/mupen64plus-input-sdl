@@ -290,6 +290,7 @@ static void init_controller_config(int iCtrlIdx, const char *pccDeviceName, eMod
     /* save the general controller parameters */
     ConfigSetDefaultFloat(pConfig, "version", CONFIG_VERSION, "Mupen64Plus SDL Input Plugin config parameter version number.  Please don't change this version number.");
     ConfigSetDefaultInt(pConfig, "mode", (int) mode, "Controller configuration mode: 0=Fully Manual, 1=Auto with named SDL Device, 2=Fully automatic");
+    ConfigSetDefaultBool(pConfig, "test", controller[iCtrlIdx].test_mode, "Activate test mode for this controller. Prints axis, hat, and button state changes to console.");
     ConfigSetDefaultInt(pConfig, "device", controller[iCtrlIdx].device, "Specifies which joystick is bound to this controller: -1=No joystick, 0 or more= SDL Joystick number");
     ConfigSetDefaultString(pConfig, "name", pccDeviceName, "SDL joystick name (or Keyboard)");
     ConfigSetDefaultBool(pConfig, "plugged", controller[iCtrlIdx].control->Present, "Specifies whether this controller is 'plugged in' to the simulated N64");
@@ -549,6 +550,10 @@ void load_configuration(int bPreConfig)
                 if (!bPreConfig)
                     DebugMessage(M64MSG_WARNING, "Missing or invalid 'mode' parameter in config section '%s'.  Setting to 2 (Fully Auto)", SectionName);
                 OrigControlMode[n64CtrlIdx] = E_MODE_FULL_AUTO;
+            }
+            if (ConfigGetParameter(pConfig, "test", M64TYPE_BOOL, &controller[n64CtrlIdx].test_mode, sizeof(int)) != M64ERR_SUCCESS) {
+                DebugMessage(M64MSG_INFO, "Missing or invalid 'test' parameter in config section %s. Setting to False.", SectionName);
+                controller[n64CtrlIdx].test_mode = 0;
             }
             ControlMode[n64CtrlIdx] = OrigControlMode[n64CtrlIdx];
             if (ConfigGetParameter(pConfig, "device", M64TYPE_INT, &ControlDevice[n64CtrlIdx], sizeof(int)) != M64ERR_SUCCESS)

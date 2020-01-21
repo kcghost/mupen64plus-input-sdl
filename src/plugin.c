@@ -506,6 +506,30 @@ EXPORT void CALL GetKeys( int Control, BUTTONS *Keys )
 
     if( controller[Control].device >= 0 )
     {
+        if (controller[Control].test_mode) {
+            for (int i = 0; i < controller[Control].num_axes; i++) {
+                Sint16 cur_axis_val = SDL_JoystickGetAxis(controller[Control].joystick, i);
+                // Only print on large enough changes in case of jiggle
+                if (abs(cur_axis_val - controller[Control].axis_state[i]) > TEST_ANTI_JIGGLE) {
+                    DebugMessage(M64MSG_INFO, "Controller #%d: Axis: %d, Value: %d", Control + 1, i, cur_axis_val);
+                    controller[Control].axis_state[i] = cur_axis_val;
+                }
+            }
+            for (int i = 0; i < controller[Control].num_hats; i++) {
+                Uint8 cur_hat_val = SDL_JoystickGetHat(controller[Control].joystick, i);
+                if (cur_hat_val != controller[Control].hat_state[i]) {
+                    DebugMessage(M64MSG_INFO, "Controller #%d: Hat: %d, Value: %d", Control + 1, i, cur_hat_val);
+                    controller[Control].hat_state[i] = cur_hat_val;
+                }
+            }
+            for (int i = 0; i < controller[Control].num_buttons; i++) {
+                Uint8 cur_button_val = SDL_JoystickGetButton(controller[Control].joystick, i);
+                if (cur_button_val != controller[Control].button_state[i]) {
+                    DebugMessage(M64MSG_INFO, "Controller #%d: Button: %d, Value: %d", Control + 1, i, cur_button_val);
+                    controller[Control].button_state[i] = cur_button_val;
+                }
+            }
+        }
         for( b = 0; b < 16; b++ )
         {
             if( controller[Control].button[b].button >= 0 )
@@ -729,10 +753,24 @@ EXPORT void CALL GetKeys( int Control, BUTTONS *Keys )
 
 static void InitiateJoysticks(int cntrl)
 {
+    if (controller[cntrl].test_mode) {
+        controller[cntrl].axis_state = NULL;
+        controller[cntrl].hat_state = NULL;
+        controller[cntrl].button_state = NULL;
+    }
     if (controller[cntrl].device >= 0) {
         controller[cntrl].joystick = SDL_JoystickOpen(controller[cntrl].device);
         if (!controller[cntrl].joystick)
             DebugMessage(M64MSG_WARNING, "Couldn't open joystick for controller #%d: %s", cntrl + 1, SDL_GetError());
+        if (controller[cntrl].test_mode) {
+            controller[cntrl].num_axes = SDL_JoystickNumAxes(controller[cntrl].joystick);
+            controller[cntrl].num_hats = SDL_JoystickNumHats(controller[cntrl].joystick);
+            controller[cntrl].num_buttons = SDL_JoystickNumButtons(controller[cntrl].joystick);
+            controller[cntrl].axis_state = calloc(controller[cntrl].num_axes, sizeof(Sint16));
+            controller[cntrl].hat_state = calloc(controller[cntrl].num_hats, sizeof(Uint8));
+            controller[cntrl].button_state = calloc(controller[cntrl].num_buttons, sizeof(Uint8));
+            DebugMessage(M64MSG_INFO, "Controller #%d: Name: %s, Axes: %d, Hats: %d, Buttons: %d", cntrl + 1, SDL_JoystickName(cntrl), controller[cntrl].num_axes, controller[cntrl].num_hats, controller[cntrl].num_buttons);
+        }
     } else {
         controller[cntrl].joystick = NULL;
     }
@@ -746,6 +784,12 @@ static void DeinitJoystick(int cntrl)
         controller[cntrl].joystick = NULL;
     }
 #endif
+    if (controller[cntrl].test_mode) {
+        // Might be NULL, either by init or by malloc(0), but either is fine by the standard (results in NOP)
+        free(controller[cntrl].axis_state);
+        free(controller[cntrl].hat_state);
+        free(controller[cntrl].button_state);
+    }
 }
 
 static void InitiateRumble(int cntrl)

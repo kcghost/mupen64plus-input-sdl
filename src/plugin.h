@@ -78,6 +78,7 @@ static inline const char* _SDL_JoystickName(int device_index)
 #include "m64p_plugin.h"
 
 #define DEVICE_NO_JOYSTICK  (-1)
+#define TEST_ANTI_JIGGLE 1024
 
 // Some stuff from n-rage plugin
 #define RD_GETSTATUS        0x00        // get status
@@ -136,6 +137,15 @@ typedef struct
 {
     CONTROL *control;               // pointer to CONTROL struct in Core library
     BUTTONS buttons;
+
+    // Test mode and joystick state
+    int test_mode;
+    int num_axes;
+    int num_hats;
+    int num_buttons;
+    Sint16* axis_state;
+    Uint8* hat_state;
+    Uint8* button_state;
 
     // mappings
     SButtonMap    button[16];       // 14 buttons; in the order of EButton + mempak/rumblepak switches
